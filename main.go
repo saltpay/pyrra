@@ -79,6 +79,7 @@ var CLI struct {
 		TLSClientCAFile             string            `default:"" help:"File containing the CA certificate for the client"`
 		MimirOrgID                  string            `default:"" help:"Mimir tenant ID to query if multi-tenancy is enabled."`
 		EnablePrometheus3Migration  bool              `default:"true" help:"Enable Prometheus 3 migration mode that makes queries compatible with both Prometheus 2 and 3. Enabled by default; pass --enable-prometheus-3-migration=false to opt out."`
+		ListenAddr                  string            `default:"9099" help:"Address to listen on"`
 	} `cmd:"" help:"Runs Pyrra's API and UI."`
 	Filesystem struct {
 		ConfigFiles                string   `default:"/etc/pyrra/*.yaml" help:"The folder where Pyrra finds the config files to use. Any non yaml files will be ignored."`
@@ -88,6 +89,7 @@ var CLI struct {
 		GenericRules               bool     `default:"false" help:"Enabled generic recording rules generation to make it easier for tools like Grafana."`
 		EnablePrometheus3Migration bool     `default:"true" help:"Enable Prometheus 3 migration mode that makes rules compatible with both Prometheus 2 and 3. Enabled by default; pass --enable-prometheus-3-migration=false to opt out."`
 		ExternalURL                *url.URL `default:"" help:"The URL for Pyrra to be included in alert annotations. This will be used to generate direct links to the Pyrra UI in alerts."`
+		ListenAddr                 string   `default:":9444" help:"Address to listen on"`
 	} `cmd:"" help:"Runs Pyrra's filesystem operator and backend for the API."`
 	Kubernetes struct {
 		MetricsAddr                string   `default:":8080" help:"The address the metric endpoint binds to."`
@@ -108,6 +110,7 @@ var CLI struct {
 		EnableLeaderElection       bool     `default:"false" help:"Enable leader election for controller manager to enable running multiple replicas."`
 		LeaderElectionNamespace    string   `default:"" help:"Namespace used to perform leader election. Defaults to the namespace the controller is running in."`
 		Namespaces                 []string `default:"" help:"Comma-separated list of namespaces to watch for ServiceLevelObjectives. Defaults to all namespaces when unset."`
+		ListenAddr                 string   `default:":9444" help:"Address to listen on"`
 	} `cmd:"" help:"Runs Pyrra's Kubernetes operator and backend for the API."`
 	Generate struct {
 		ConfigFiles                string   `default:"/etc/pyrra/*.yaml" help:"The folder where Pyrra finds the config files to use."`
@@ -257,6 +260,7 @@ func main() {
 			CLI.API.TLSCertFile,
 			CLI.API.TLSPrivateKeyFile,
 			CLI.API.EnablePrometheus3Migration,
+			CLI.API.ListenAddr,
 		)
 	case "filesystem":
 		code = cmdFilesystem(
@@ -269,6 +273,7 @@ func main() {
 			CLI.Filesystem.EnablePrometheus3Migration,
 			CLI.Filesystem.ExternalURL,
 			CLI.Filesystem.ReloadURL,
+			CLI.Filesystem.ListenAddr,
 		)
 	case "kubernetes":
 		code = cmdKubernetes(
@@ -286,6 +291,7 @@ func main() {
 			CLI.Kubernetes.EnableLeaderElection,
 			CLI.Kubernetes.LeaderElectionNamespace,
 			CLI.Kubernetes.Namespaces,
+			CLI.Kubernetes.ListenAddr,
 		)
 	case "generate":
 		code = cmdGenerate(
@@ -310,6 +316,7 @@ func cmdAPI(
 	routePrefix, uiRoutePrefix string,
 	tlsCertFile, tlsPrivateKeyFile string,
 	enablePrometheus3Migration bool,
+	listenAddr string,
 ) int {
 	build, err := fs.Sub(ui, "ui/build")
 	if err != nil {
@@ -503,7 +510,7 @@ func cmdAPI(
 
 	{
 		httpServer := &http.Server{
-			Addr:      ":9099",
+			Addr:      listenAddr,
 			Handler:   r,
 			Protocols: httpProtocols(),
 			TLSConfig: &tls.Config{},
