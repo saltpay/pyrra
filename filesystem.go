@@ -102,7 +102,7 @@ func reloadEndpoint(promClient api.Client, reloadURL *url.URL) *url.URL {
 	return promClient.URL("/-/reload", nil)
 }
 
-func cmdFilesystem(logger log.Logger, reg *prometheus.Registry, promClient api.Client, configFiles, prometheusFolder string, genericRules, enablePrometheus3Migration bool, pyrraExternalURL, reloadURL *url.URL) int {
+func cmdFilesystem(logger log.Logger, reg *prometheus.Registry, promClient api.Client, configFiles, prometheusFolder string, genericRules, enablePrometheus3Migration bool, pyrraExternalURL, reloadURL *url.URL, listenAddr string) int {
 	reconcilesTotal := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "pyrra_filesystem_reconciles_total",
 		Help: "The total amount of reconciles.",
@@ -271,7 +271,7 @@ func cmdFilesystem(logger log.Logger, reg *prometheus.Registry, promClient api.C
 		router.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
 
 		server := http.Server{
-			Addr:      ":9444",
+			Addr:      listenAddr,
 			Handler:   router,
 			Protocols: httpProtocols(),
 		}

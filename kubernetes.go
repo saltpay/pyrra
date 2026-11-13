@@ -135,6 +135,7 @@ func cmdKubernetes(
 	enableLeaderElection bool,
 	leaderElectionNamespace string,
 	namespaces []string,
+	listenAddr string,
 ) int {
 	setupLog := ctrl.Log.WithName("setup")
 	ctrl.SetLogger(newGoKitLogr(logger))
@@ -221,7 +222,7 @@ func cmdKubernetes(
 		connecthttp.Mount(router, srv, connecthttp.WithReadMaxBytes(0))
 
 		server := http.Server{
-			Addr:      ":9444",
+			Addr:      listenAddr,
 			Handler:   router,
 			Protocols: httpProtocols(),
 		}
